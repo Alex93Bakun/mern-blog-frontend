@@ -1,6 +1,6 @@
 import React, { useRef, useState } from 'react';
 import { useSelector } from 'react-redux';
-import { Navigate } from 'react-router-dom';
+import { Navigate, useNavigate } from 'react-router-dom';
 import TextField from '@mui/material/TextField';
 import Paper from '@mui/material/Paper';
 import Button from '@mui/material/Button';
@@ -12,9 +12,10 @@ import 'easymde/dist/easymde.min.css';
 import styles from './AddPost.module.scss';
 
 export const AddPost = () => {
+    const navigate = useNavigate()
     const isAuth = useSelector(isAuthSelector);
     const [isLoading, setIsLoading] = useState(false);
-    const [value, setValue] = useState('');
+    const [text, setText] = useState('');
     const [title, setTitle] = useState('');
     const [tags, setTags] = useState('');
     const [imageUrl, setImageUrl] = useState('');
@@ -39,8 +40,30 @@ export const AddPost = () => {
     };
 
     const onChange = React.useCallback((value) => {
-        setValue(value);
+        setText(value);
     }, []);
+
+    const onSubmit = async () => {
+        try {
+            setIsLoading(true);
+
+            const fields = {
+                title,
+                imageUrl,
+                tags,
+                text
+            }
+
+            const { data } = await axios.post('/posts', fields);
+
+            const id = data._id;
+            
+            navigate(`/posts/${id}`);
+        } catch (e) {
+            console.warn(e);
+            alert('Ошибка при создании статьи!');
+        }
+    }
 
     const options = React.useMemo(
         () => ({
@@ -92,19 +115,19 @@ export const AddPost = () => {
             <TextField
                 classes={{ root: styles.tags }}
                 variant="standard"
-                placeholder="Тэги"
+                placeholder="Тэги (через запятую)"
                 value={tags}
                 onChange={(e) => setTags(e.target.value)}
                 fullWidth
             />
             <SimpleMDE
                 className={styles.editor}
-                value={value}
+                value={text}
                 onChange={onChange}
                 options={options}
             />
             <div className={styles.buttons}>
-                <Button size="large" variant="contained">
+                <Button onClick={onSubmit} size="large" variant="contained">
                     Опубликовать
                 </Button>
                 <a href="/">
